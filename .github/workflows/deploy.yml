@@ -1,0 +1,62 @@
+name: Build and Push to Amazon ECR
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout source
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # 2. Configure AWS credentials (OIDC)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: eu-central-1
+
+      # 3. Log in to Amazon ECR
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4. Build and push Docker image
+      - name: Build and Push Docker image
+        run: |
+          ECR_REPO_URI=${{ secrets.ECR_REPOSITORY_URI }}
+          IMAGE_TAG=${{ github.sha }}
+          
+          # Build and tag image
+          docker build -t $ECR_REPO_URI:$IMAGE_TAG -t $ECR_REPO_URI:latest .
+          
+          # Push both tags
+          docker push $ECR_REPO_URI:$IMAGE_TAG
+
+      # 5. Prepare deployment templates (taskdef.json + appspec.yml)
+      - name: Prepare Deployment Templates
+        run: |
+          IMAGE_URI=${{ secrets.ECR_REPOSITORY_URI }}:${{ github.sha }}
+          CONTAINER_NAME=${{ secrets.ECS_CONTAINER_NAME }}
+
+          # Inject image into task definition
+          jq --arg image "$IMAGE_URI" --arg name "$CONTAINER_NAME" \
+            '.containerDefinitions[0].image=$image | .containerDefinitions[0].name=$name' \
+            taskdef.json > taskdef-rendered.json
+
+          # Create zip for pipeline
+          mv taskdef-rendered.json taskdef.json
+          zip deployment-templates.zip taskdef.json appspec.yml
+
+      # 6. Upload templates zip to S3
+      - name: Upload Deployment Templates
+        run: |
+          aws s3 cp deployment-templates.zip s3://${{ secrets.ARTIFACT_BUCKET }}/
