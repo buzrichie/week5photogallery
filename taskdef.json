@@ -1,10 +1,10 @@
 {
-  "family": "photo-lab-task",
-  "executionRoleArn": "arn:aws:iam::004165097941:role/photo-lab-ecsTaskExecutionRole",
+  "family": "photo-g-lab-task",
+  "executionRoleArn": "arn:aws:iam::004165097941:role/photo-g-lab-ecsTaskExecutionRole",
   "networkMode": "awsvpc",
   "containerDefinitions": [
     {
-      "name": "photo-lab-container",
+      "name": "photo-g-lab-container",
       "image": "<IMAGE_URI>",
       "portMappings": [
         {
