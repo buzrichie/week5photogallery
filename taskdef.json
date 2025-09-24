@@ -1,6 +1,6 @@
 {
   "family": "ecs-stack-task-definition",
-  "executionRoleArn": "arn:aws:iam::004165097941:role/photo-lab-GitHubActionsRole",
+  "executionRoleArn": "arn:aws:iam::004165097941:role/photo-lab-ecsTaskExecutionRole",
   "networkMode": "awsvpc",
   "containerDefinitions": [
     {
