@@ -3,7 +3,7 @@ Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: <TASK_DEFINITION>
+        TaskDefinition: arn:aws:ecs:eu-central-1:004165097941:task-definition/photogallery-task:1
         LoadBalancerInfo:
           ContainerName: "photogallery-container"
           ContainerPort: 8080

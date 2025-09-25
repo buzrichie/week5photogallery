@@ -17,7 +17,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/photo-lab",
+          "awslogs-group": "/ecs/photogallery",
           "awslogs-region": "eu-central-1",
           "awslogs-stream-prefix": "ecs"
         }
