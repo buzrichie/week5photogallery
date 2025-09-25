@@ -29,36 +29,36 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4. Prepare deployment templates (taskdef.json + appspec.yml)
-      - name: Prepare Deployment Templates
-        run: |
-          IMAGE_URI=${{ secrets.ECR_REPOSITORY_URI }}:${{ github.sha }}
-          CONTAINER_NAME=${{ secrets.ECS_CONTAINER_NAME }}
-
-          # Inject new image into task definition
-          jq --arg image "$IMAGE_URI" --arg name "$CONTAINER_NAME" \
-            '.containerDefinitions[0].image=$image | .containerDefinitions[0].name=$name' \
-            taskdef.json > taskdef-rendered.json
-
-          mv taskdef-rendered.json taskdef.json
-
-          # Package into zip
-          zip deployment-templates.zip taskdef.json appspec.yml
-
-      # 5. Upload templates zip to S3 FIRST
-      - name: Upload Deployment Templates
-        run: |
-          aws s3 cp deployment-templates.zip s3://${{ secrets.ARTIFACT_BUCKET }}/deployment-templates.zip
-
-      # 6. Build and push Docker image AFTER zip is uploaded
+      # 4. Build and Push Docker image
       - name: Build and Push Docker image
         run: |
           ECR_REPO_URI=${{ secrets.ECR_REPOSITORY_URI }}
-          IMAGE_TAG=${{ github.sha }}
-          
-          # Build and tag image
-          docker build -t $ECR_REPO_URI:$IMAGE_TAG -t $ECR_REPO_URI:latest .
-          
-          # Push both tags
-          # docker push $ECR_REPO_URI:$IMAGE_TAG
-          docker push $ECR_REPO_URI:latest
+          IMAGE_TAG=latest
+          IMAGE_URI=$ECR_REPO_URI:$IMAGE_TAG
+
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+          # Build image
+          docker build -t $IMAGE_URI .
+
+          # Push image
+          docker push $IMAGE_URI
+
+      # 5. Inject variables into taskdef.json
+      - name: Render Task Definition
+        run: |
+          sed -e "s|<IMAGE_URI>|${IMAGE_URI}|g" \
+              -e "s|<S3_BUCKET_NAME>|${{ secrets.S3_BUCKET_NAME }}|g" \
+              -e "s|<SECRETS_MANAGER_ARN>|${{ secrets.SECRETS_MANAGER_ARN }}|g" \
+              taskdef.json > taskdef-rendered.json
+          mv taskdef-rendered.json taskdef.json
+
+      # 6. Package deployment templates
+      - name: Package Deployment Templates
+        run: |
+          zip deployment-templates.zip taskdef.json appspec.yml
+
+      # 7. Upload templates zip to S3
+      - name: Upload Deployment Templates
+        run: |
+          aws s3 cp deployment-templates.zip s3://${{ secrets.ARTIFACT_BUCKET }}/deployment-templates.zip
