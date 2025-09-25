@@ -1,11 +1,11 @@
 {
-  "family": "photogallery-task",
-  "executionRoleArn": "arn:aws:iam::004165097941:role/photogallery-ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::004165097941:role/photogallery-ecsTaskRole",
+  "family": "p-lab-task",
+  "executionRoleArn": "arn:aws:iam::004165097941:role/p-lab-ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::004165097941:role/p-lab-ecsTaskRole",
   "networkMode": "awsvpc",
   "containerDefinitions": [
     {
-      "name": "photogallery-container",
+      "name": "p-lab-container",
       "image": "<IMAGE_URI>",
       "portMappings": [
         {
@@ -18,7 +18,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/photogallery",
+          "awslogs-group": "/ecs/p-lab",
           "awslogs-region": "eu-central-1",
           "awslogs-stream-prefix": "ecs"
         }
