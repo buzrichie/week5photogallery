@@ -5,5 +5,5 @@ Resources:
       Properties:
         TaskDefinition: <TASK_DEFINITION>
         LoadBalancerInfo:
-          ContainerName: "photo-g-lab-container"
+          ContainerName: "photogallery-container"
           ContainerPort: 8080
