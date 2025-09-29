@@ -1,11 +1,11 @@
 {
-  "family": "p-lab-task",
-  "executionRoleArn": "arn:aws:iam::004165097941:role/p-lab-ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::004165097941:role/p-lab-ecsTaskRole",
+  "family": "photolab-task",
+  "executionRoleArn": "arn:aws:iam::004165097941:role/photolab-ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::004165097941:role/photolab-ecsTaskRole",
   "networkMode": "awsvpc",
   "containerDefinitions": [
     {
-      "name": "p-lab-container",
+      "name": "photolab-container",
       "image": "<IMAGE_URI>",
       "portMappings": [
         {
@@ -18,7 +18,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/p-lab",
+          "awslogs-group": "/ecs/photolab",
           "awslogs-region": "eu-central-1",
           "awslogs-stream-prefix": "ecs"
         }

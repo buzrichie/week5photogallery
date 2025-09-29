@@ -1,13 +1,16 @@
 package org.week6lap.week5photogallery.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.week6lap.week5photogallery.model.Image;
 import org.week6lap.week5photogallery.service.ImageService;
 import org.week6lap.week5photogallery.service.S3Service;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 public class GalleryController {
@@ -26,9 +29,8 @@ public class GalleryController {
     }
 
     @PostMapping("/upload")
-    public String prepareUpload(@RequestParam String description,
-                                @RequestParam String fileName,
-                                RedirectAttributes redirectAttributes) {
+    public ResponseEntity<?> prepareUpload(@RequestParam String description,
+                                           @RequestParam String fileName) {
         try {
             // Generate presigned URL for upload
             String result = s3Service.generatePresignedUploadUrl(fileName, "image/jpeg");
@@ -36,17 +38,22 @@ public class GalleryController {
             String objectKey = parts[0];
             String uploadUrl = parts[1];
 
-            // Save image metadata
+            // Save image metadata in DB
             Image image = imageService.saveImage(objectKey, description);
 
-            redirectAttributes.addFlashAttribute("uploadUrl", uploadUrl);
-            redirectAttributes.addFlashAttribute("objectKey", objectKey);
-            redirectAttributes.addFlashAttribute("message", "Upload prepared successfully!");
+            // Build JSON response
+            Map<String, Object> response = new HashMap<>();
+            response.put("objectKey", objectKey);
+            response.put("uploadUrl", uploadUrl);
+            response.put("imageId", image.getId());
+            response.put("message", "Upload prepared successfully!");
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error preparing upload: " + e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Error preparing upload: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
-
-        return "redirect:/";
     }
 }
