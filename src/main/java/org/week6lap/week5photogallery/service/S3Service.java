@@ -3,6 +3,7 @@ package org.week6lap.week5photogallery.service;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -15,6 +16,8 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import jakarta.annotation.PostConstruct;
+
+import java.io.IOException;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -79,6 +82,20 @@ public class S3Service {
 
         PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
         return presignedRequest.url().toString();
+    }
+
+    public void uploadFile(MultipartFile file, String objectKey) throws IOException {
+        // Build PutObjectRequest
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectKey)
+                .contentType(file.getContentType())
+                .contentLength(file.getSize())
+                .build();
+
+        // Upload file stream to S3
+        s3Client.putObject(putObjectRequest,
+                software.amazon.awssdk.core.sync.RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
     }
 
 }

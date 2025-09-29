@@ -4,7 +4,6 @@
     <title>Photo Gallery</title>
     <meta charset="UTF-8">
     <style>
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -127,19 +126,10 @@
             font-size: 0.85rem;
         }
 
-        /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .upload-form { margin: 20px; padding: 20px; }
-            .gallery { gap: 15px; padding: 15px; }
-        }
-
-
     </style>
 </head>
 <body>
@@ -177,28 +167,18 @@
             return;
         }
 
-        // Step 1: Ask backend for presigned URL (JSON)
-        const response = await fetch("/upload?description=" + encodeURIComponent(desc) + "&fileName=" + encodeURIComponent(file.name), {
-            method: "POST"
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("description", desc);
+
+        const response = await fetch("/upload", {
+            method: "POST",
+            body: formData
         });
 
-        if (!response.ok) {
-            document.getElementById("status").innerText = "Error requesting upload URL.";
-            return;
-        }
-
-        const json = await response.json();
-        const uploadUrl = json.uploadUrl;
-
-        // Step 2: Upload file directly to S3
-        const putResp = await fetch(uploadUrl, {
-            method: "PUT",
-            body: file,
-            headers: { "Content-Type": file.type }
-        });
-
-        if (putResp.ok) {
+        if (response.ok) {
             document.getElementById("status").innerText = "Upload successful! Refreshing gallery...";
+            document.getElementById("uploadForm").reset();
             setTimeout(loadGallery, 1500);
         } else {
             document.getElementById("status").innerText = "Upload failed!";
@@ -218,7 +198,7 @@
             const card = document.createElement("div");
             card.className = "image-card";
             card.innerHTML = `
-                <img src="${img.url}" alt="${img.description}">
+                <img src="${img.presignedUrl || img.url}" alt="${img.description}">
                 <p>${img.description}</p>
                 <small>${new Date(img.createdAt).toLocaleString()}</small>
             `;
@@ -229,6 +209,5 @@
     // Load gallery on page load
     loadGallery();
 </script>
-
 </body>
 </html>

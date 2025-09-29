@@ -18,13 +18,11 @@ public class ImageService {
     @Autowired
     private S3Service s3Service;
 
-    public Image saveImage(String objectKey, String description) {
-        String presignedUrl = s3Service.generatePresignedViewUrl(objectKey);
-
-        Image image = new Image(objectKey, description);
+    public Image saveImage(String objectKey, String description, String presignedUrl) {
+        Image image = new Image();
+        image.setObjectKey(objectKey);
+        image.setDescription(description);
         image.setPresignedUrl(presignedUrl);
-        image.setUrlExpiresAt(LocalDateTime.now().plusDays(2));
-
         return imageRepository.save(image);
     }
 

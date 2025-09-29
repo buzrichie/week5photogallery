@@ -6,11 +6,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.week6lap.week5photogallery.model.Image;
 import org.week6lap.week5photogallery.service.ImageService;
 import org.week6lap.week5photogallery.service.S3Service;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Controller
 public class GalleryController {
@@ -28,32 +30,35 @@ public class GalleryController {
         return "gallery";
     }
 
+    // Upload file + description
     @PostMapping("/upload")
-    public ResponseEntity<?> prepareUpload(@RequestParam String description,
-                                           @RequestParam String fileName) {
+    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file,
+                                         @RequestParam("description") String description) {
         try {
-            // Generate presigned URL for upload
-            String result = s3Service.generatePresignedUploadUrl(fileName, "image/jpeg");
-            String[] parts = result.split("\\|");
-            String objectKey = parts[0];
-            String uploadUrl = parts[1];
+            // Generate a unique S3 object key
+            String objectKey = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
-            // Save image metadata in DB
-            Image image = imageService.saveImage(objectKey, description);
+            // Upload file to S3
+            s3Service.uploadFile(file, objectKey);
+
+            // Generate a presigned **view** URL for secure access
+            String presignedUrl = s3Service.generatePresignedViewUrl(objectKey);
+
+            // Save metadata to DB
+            Image savedImage = imageService.saveImage(objectKey, description, presignedUrl);
 
             // Build JSON response
             Map<String, Object> response = new HashMap<>();
+            response.put("id", savedImage.getId());
             response.put("objectKey", objectKey);
-            response.put("uploadUrl", uploadUrl);
-            response.put("imageId", image.getId());
-            response.put("message", "Upload prepared successfully!");
+            response.put("description", description);
+            response.put("url", presignedUrl);
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Error preparing upload: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Upload failed: " + e.getMessage()));
         }
     }
 }
